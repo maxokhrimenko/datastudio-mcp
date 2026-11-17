@@ -233,3 +233,19 @@ def test_conditional_formatting_change_alone_is_written(tmp_path):
     session.conditions_seen = ([], rule)
     result = asyncio.run(run(session, dry_run=True))
     assert result["status"] == "planned" and result["chart_conditions"] == rule
+
+
+def test_a_batch_reports_every_step_with_its_component(tmp_path):
+    session = OpsSession(tmp_path)
+    first, second = added(session), added(session)
+    second["before"] = copy.deepcopy(first["after"])
+    first["properties"] = [{"key": "fontSize", "after": "36px"}]
+    second["properties"] = [{"key": "showLegend", "after": False}]
+    session.results = [first, second]
+    result = asyncio.run(NativeOps(Studio(session)).run(
+        "script", [{"componentId": "cd-a"}, {"componentId": "cd-b"}], page_id="p_test",
+        expected_fingerprint=fingerprint(session.page_doc), dry_run=True))
+    assert [(s["component_id"], s["properties"]) for s in result["steps"]] == [
+        ("cd-a", [{"key": "fontSize", "after": "36px"}]),
+        ("cd-b", [{"key": "showLegend", "after": False}])]
+    assert "properties" not in result  # the last step's keys never read as the batch's

@@ -20,6 +20,7 @@ from .blend_joins import RUNTIME_CODES, JoinType
 from .blends import Blends, blend_inventory
 from .browser import StudioError
 from .document import fingerprint, json_equal
+from .field_models import Aggregation
 from .report_resources import ReportResources, report_content
 
 if TYPE_CHECKING:
@@ -35,7 +36,7 @@ def _token(length: int) -> str:
 class BlendMetric(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     name: str = Field(min_length=1, description="Source field name from datasource_get")
-    aggregation: int | None = Field(default=None, description="Default: the field's own")
+    aggregation: Aggregation | None = Field(default=None, description="Default: the field's own")
 
 
 class BlendTable(BaseModel):

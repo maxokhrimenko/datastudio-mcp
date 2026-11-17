@@ -164,6 +164,7 @@ class NativeOps:
                 conditions_before = (await self._conditions(page_id, version)
                                      if page_id is not None else None)
                 result: dict[str, Any] = {}
+                outcomes: list[dict[str, Any]] = []
                 for index, step in enumerate(steps):
                     try:
                         out = await self.evaluate(script, {**step, "pageId": page_id,
@@ -175,9 +176,16 @@ class NativeOps:
                         # Name the failing step, so a caller can drop it and retry.
                         raise StudioError(exc.code, f"step {index}: {exc}") from exc
                     result = {**out, "before": result.get("before", out.get("before"))}
-                    if len(steps) > 1:
-                        result.setdefault("steps", []).append(
-                            {k: v for k, v in out.items() if k not in ("before", "after")})
+                    # Every step's own outcome, named by its target (one per component).
+                    outcomes.append({**({"component_id": step["componentId"]}
+                                        if isinstance(step, dict) and step.get("componentId")
+                                        else {}),
+                                     **{k: v for k, v in out.items()
+                                        if k not in ("before", "after")}})
+                if len(steps) > 1:
+                    # The last step's own keys would read as the whole batch's: steps say it.
+                    result = {"before": result["before"], "after": result["after"],
+                              "steps": outcomes}
                 # EDITOR_STALE here (loaded model off its saved state) reaches server.call(),
                 # which reloads and runs the whole tool once more; nothing was sent yet.
                 merged = overlay_delta(result.pop("before"), result.pop("after"), saved)

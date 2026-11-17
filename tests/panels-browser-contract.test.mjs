@@ -65,6 +65,13 @@ test('a button takes only true',async()=>{
   assert.equal(out.error,'INVALID_PROPERTY_VALUE');
 });
 
+test('a key the panel does not have is named unknown, with the keys that look like it',async()=>{
+  const out=await run(chart(),{mode:'set',changes:[{key:'referenceLineLabel',value:'x'}]});
+  assert.equal(out.error,'UNKNOWN_PROPERTY');
+  assert.deepEqual(out.details,{key:'referenceLineLabel',
+    similar:['referenceLineLabel1','referenceLineLabel2']});
+});
+
 // A palette: a custom color replaces the slot's theme reference; the other slots stay.
 function palette(){
   const store={multiColor:[{color:'#111111',themeRef:{index:4}},{color:'#222222',themeRef:{index:5}}]};

@@ -13,6 +13,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from .browser import StudioError
 from .document import fingerprint, json_equal
+from .field_models import Aggregation
 from .formulas import Formulas, dependency_summary
 
 if TYPE_CHECKING:
@@ -29,7 +30,7 @@ class CalculatedField(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     output_name: str = Field(min_length=1)
     expression: str = Field(min_length=1, max_length=100_000)
-    aggregation: int = Field(ge=0)
+    aggregation: Aggregation
 
 
 _CALC_ID = re.compile(r"calc_[A-Za-z0-9_]+")
@@ -65,9 +66,7 @@ class FieldMetadataEdit(BaseModel):
     semantic_config: list[dict[str, Any]] | None = Field(
         default=None, min_length=1, max_length=20
     )
-    # NONE 0, AVG 1, COUNT 2, COUNT_DISTINCT 3, MAX 4, MIN 5, SUM 6, AUTO 7, FIRST 8,
-    # LAST 9, MEDIAN 10, VARIANCE 11, STDDEV 12, PERCENTILE 13, APPROX_COUNT_DISTINCT 14.
-    default_aggregation: int | None = Field(default=None, ge=0, le=14)
+    default_aggregation: Aggregation | None = None
     enabled: bool | None = None
 
     @model_validator(mode="after")

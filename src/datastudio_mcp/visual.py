@@ -43,6 +43,22 @@ _SIZE = """pageId => {
 }"""
 
 
+def hidden_from_viewers(value: Any, page_id: str, hidden: bool = False) -> bool:
+    """The page, or a section that holds it, is hidden from viewers in the navigation."""
+    if isinstance(value, list):
+        return any(hidden_from_viewers(item, page_id, hidden) for item in value)
+    if not isinstance(value, dict):
+        return False
+    page = value.get("page")
+    if isinstance(page, dict) and page.get("pageId") == page_id:
+        return hidden or bool(page.get("hiddenFromViewer"))
+    section = value.get("section")
+    if isinstance(section, dict):
+        return hidden_from_viewers(section.get("navItems", []), page_id,
+                                   hidden or bool(section.get("hiddenFromViewer")))
+    return hidden_from_viewers(value.get("navItems", []), page_id, hidden)
+
+
 class Visual:
     def __init__(self, studio: Studio):
         self.studio = studio
@@ -54,10 +70,15 @@ class Visual:
         shown = re.search(r"/page/([^/?#]+)", page.url)
         if not shown or shown[1] != page_id:
             # The viewer never shows a page hidden from viewers: it opens the first visible
-            # page instead, and the canvas would be that page's.
-            raise StudioError("PAGE_NOT_SHOWN", f"Viewers cannot open {page_id} (hidden from "
-                              "viewers?); the viewer opened another page, so there is nothing "
-                              "to capture")
+            # page instead, and the canvas would be that page's. A visible page of an older
+            # report may simply have another URL token than its ID (/page/SEHDG for 89400174).
+            navigation = (await self.studio.inventory())["navigation"] or {}
+            ids = {p["pageId"] for p in page_items(navigation)}
+            if page_id not in ids or hidden_from_viewers(navigation, page_id) or (
+                    shown and shown[1] in ids):
+                raise StudioError("PAGE_NOT_SHOWN", f"Viewers cannot open {page_id} (hidden "
+                                  "from viewers, or not a page of this report); the viewer "
+                                  "opened another page, so there is nothing to capture")
         size = await page.evaluate(_SIZE, page_id)
         if not size["canvas"]:
             raise StudioError("EDITOR_NOT_READY", "The report canvas is not rendered")
