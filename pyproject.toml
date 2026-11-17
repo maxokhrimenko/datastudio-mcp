@@ -1,6 +1,6 @@
 [project]
 name = "datastudio-mcp"
-version = "0.6.8"
+version = "0.6.9"
 description = "MCP for Google Datastudio by Max Omen: AI agents build and edit Datastudio reports end to end"
 readme = "README.md"
 license = "LicenseRef-PolyForm-Noncommercial-1.0.0"

@@ -119,6 +119,27 @@ profile — signing in to your everyday Chrome does not count.
 109 tools in total. The full editor coverage, item by item, is in
 [docs/inventory/ui-inventory.md](docs/inventory/ui-inventory.md).
 
+### Datasources and connectors
+
+The MCP **creates** new datasources from **BigQuery only**: a table or a custom query
+(`bigquery_browse` → `datasource_create_bigquery`), including date range and viewer email
+parameters.
+
+Any other connector (Google Sheets, Google Analytics, Google Ads, Search Console, CSV
+upload, MySQL/PostgreSQL, partner connectors, …) is **added by you** in the Datastudio UI:
+*Create → Data source* (or *Add data* in a report), pick the connector, authorize it. Once
+the datasource exists, the MCP works with it like with any other:
+
+- attach it to a report with `datasource_add_to_report`, or use it where it is already
+  attached;
+- build and edit charts, tables, controls, filters and blends on it;
+- edit its fields, calculated fields, parameters, settings, name, sharing and refresh its
+  fields.
+
+BigQuery-only extras: `bigquery_browse`, and the default reader account of
+`datasource_credentials_set` (`DATASTUDIO_SERVICE_ACCOUNT_TEMPLATE`); for other connectors
+pass the account explicitly or set credentials in the UI.
+
 ### Every write follows the same contract
 
 1. **Read** the entity and take its `fingerprint`.
@@ -132,7 +153,8 @@ profile — signing in to your everyday Chrome does not count.
 
 Some actions stay with people by design: sharing reports, changing or removing existing
 datasource access, scheduled email delivery, creating, copying or deleting reports,
-creating datasources from connectors other than BigQuery, and deleting datasources.
+creating datasources from connectors other than BigQuery (see
+[Datasources and connectors](#datasources-and-connectors)), and deleting datasources.
 
 ## Configuration
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.9 - 2026-11-17
+
+- Documentation: the README and the skill say plainly which connectors the MCP works
+  with. It creates datasources from BigQuery only; datasources of any other connector
+  (Sheets, GA, Ads, CSV, …) are created in the Datastudio UI, after which every tool works
+  with them.
+
 ## 0.6.8 - 2026-11-17
 
 - Writes return the page fingerprint as it stands after the editor reload. Creating
