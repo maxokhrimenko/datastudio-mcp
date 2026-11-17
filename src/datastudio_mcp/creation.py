@@ -251,6 +251,11 @@ _PREPARE = """async args => {
                 // The chart sorts by its behavior, which keeps the preset's sort until synced.
                 R.exported('sortBehaviorSync')(c);
             }
+            // A line over dates joins its points: with the default "line to zero" a monthly
+            // series drops to zero on every day between two months (a comb of spikes).
+            if(byTime&&/^simple-(line|area)chart$/.test(spec.type)&&
+                    'missingDataDisplayType' in (c.getDefaultDisplayKeys?.()||{}))
+                c.setDisplayKeyValue('missingDataDisplayType','linearInterpolation');
             c.syncState();
             const schema=c.getSchema();schema.getConcepts();
             for(const field of [...spec.dimensions,...spec.metrics])

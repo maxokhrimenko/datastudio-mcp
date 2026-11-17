@@ -36,6 +36,9 @@ async function run({spec=SPEC,responsive=false,services=1,version='1',valid=true
           applied.keys?.dimensions??{}):k==='sortData'?(noSort?[]:applied.keys?.sortData??[{sortColumn:'qt_preset',sortDir:1}]):
           k==='metrics'?applied.keys?.metrics??{primary:['qt_preset']}:applied.keys?.[k],
         setDataSourceKeyValue:(k,v)=>{(applied.keys??={})[k]=v},syncState:()=>{},
+        // A line or area chart has the missing-data display key; a bar chart has not.
+        getDefaultDisplayKeys:()=>/line|area/.test(o.type)?{missingDataDisplayType:'lineToZero'}:{},
+        setDisplayKeyValue:(k,v)=>{(applied.display??={})[k]=v},
         getSchema:()=>({getConcepts:()=>[],...schemaOf(()=>fieldOf(valid))}),
         validate:()=>{},getConfigErrors:()=>errors};
       created.push(component);return component;
@@ -95,6 +98,16 @@ test('a date axis sorts by the date, oldest first; otherwise by the metric, larg
   assert.deepEqual(time.applied.keys.sortData,[{sortColumn:'qt_month',sortDir:0}]);
   const size=await run({spec:{...SPEC,time_axis:false,field_definitions:fields}});
   assert.deepEqual(size.applied.keys.sortData,[{sortColumn:'qt_gross',sortDir:1}]);
+});
+
+test('a line over dates joins its points; a bar chart and a non-date line are left alone',async()=>{
+  const fields={dimensions:[{name:'qt_month',namespace:'t0'}],metrics:[{name:'qt_gross',namespace:'t0'}]};
+  const line=await run({spec:{...SPEC,type:'simple-linechart',time_axis:true,field_definitions:fields}});
+  assert.deepEqual(line.applied.display,{missingDataDisplayType:'linearInterpolation'});
+  const bars=await run({spec:{...SPEC,type:'simple-barchart',time_axis:true,field_definitions:fields}});
+  assert.equal(bars.applied.display,undefined);
+  const byKind=await run({spec:{...SPEC,type:'simple-linechart',time_axis:false,field_definitions:fields}});
+  assert.equal(byKind.applied.display,undefined);
 });
 
 test('guards stop before or after creation with a stable code',async()=>{
