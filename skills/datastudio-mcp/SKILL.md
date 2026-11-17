@@ -5,7 +5,7 @@ description: "How to install and drive the datastudio MCP (mcp__datastudio__* to
 
 # Datastudio MCP
 
-Skill version **0.6.7**, for datastudio-mcp **0.6.7**. `report_open` returns
+Skill version **0.6.8**, for datastudio-mcp **0.6.8**. `report_open` returns
 `mcp_version`; if it differs, this skill is stale: reinstall it (below) or read the
 repo's `skills/datastudio-mcp/SKILL.md` and `CHANGELOG.md`.
 

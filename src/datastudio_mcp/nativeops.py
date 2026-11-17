@@ -226,4 +226,11 @@ class NativeOps:
                 # A failed reload must not hide a write's result; the model stays stale
                 # and the next tool call reloads it.
                 outcome["reload_pending"] = getattr(exc, "code", type(exc).__name__)
+            else:
+                if page_id is not None and outcome.get("fingerprint") and not dry_run:
+                    # Reloading may let the editor finish a page migration (a new page
+                    # drops datasourceConfigVersion): the next write starts from this.
+                    with contextlib.suppress(Exception):
+                        outcome["fingerprint"] = fingerprint(
+                            find_page(await self.studio.report(), page_id)["page"])
             return outcome

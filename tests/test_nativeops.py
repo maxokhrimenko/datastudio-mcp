@@ -249,3 +249,21 @@ def test_a_batch_reports_every_step_with_its_component(tmp_path):
         ("cd-a", [{"key": "fontSize", "after": "36px"}]),
         ("cd-b", [{"key": "showLegend", "after": False}])]
     assert "properties" not in result  # the last step's keys never read as the batch's
+
+
+def test_the_returned_fingerprint_is_the_page_after_the_editor_reload(tmp_path):
+    # Reloading after a write lets the editor finish a page migration (a new page drops
+    # datasourceConfigVersion); the next write must start from that page.
+    session = OpsSession(tmp_path)
+    session.results = [added(session)]
+    reloads = session.acquires
+
+    async def reload(page_id=None, *, reload=False):
+        reloads.append(reload)
+        if reload and session.writes:
+            session.page_doc["attributeConfig"] = {"migrated": True}
+
+    session.acquire = reload
+    result = asyncio.run(run(session))
+    assert result["status"] == "verified"
+    assert result["fingerprint"] == fingerprint(session.page_doc)

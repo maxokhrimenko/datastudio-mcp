@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.6.8 - 2026-11-17
+
+- Writes return the page fingerprint as it stands after the editor reload. Creating
+  components on a new page let the editor finish a page migration after the read-back, so
+  the next write with the returned fingerprint failed with `VERSION_CONFLICT`.
+- `components_create` joins the points of a line or area chart over dates (missing data:
+  linear interpolation); with the default "line to zero" a monthly series dropped to zero
+  on every day between months.
+
 ## 0.6.7 - 2026-11-17
 
 - `page_screenshot` captures visible pages of older reports whose URL shows another page
