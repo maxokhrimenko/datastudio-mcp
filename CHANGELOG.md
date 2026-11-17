@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- `page_screenshot` captures visible pages of older reports whose URL shows another page
+  token than the page ID (`/page/SEHDG` for `89400174`); before, it answered
+  `PAGE_NOT_SHOWN`. Hidden pages, pages in hidden sections and unknown IDs are still refused.
+
 ## 0.6.6 - 2026-11-17
 
 - `datasource_sharing_get` / `_set` on an embedded datasource answer `EMBEDDED_DATASOURCE`
