@@ -5,7 +5,7 @@ description: "How to install and drive the datastudio MCP (mcp__datastudio__* to
 
 # Datastudio MCP
 
-Skill version **0.6.6**, for datastudio-mcp **0.6.6**. `report_open` returns
+Skill version **0.6.7**, for datastudio-mcp **0.6.7**. `report_open` returns
 `mcp_version`; if it differs, this skill is stale: reinstall it (below) or read the
 repo's `skills/datastudio-mcp/SKILL.md` and `CHANGELOG.md`.
 
@@ -85,7 +85,8 @@ Report and pages
 Components (charts, text, images, shapes, controls)
 - `native_catalog` lists every type/preset with its full property panel.
 - `components_create` uses the editor's Insert service (native defaults), then binds
-  fields: names from `datasource_get`, every metric needs an explicit aggregation.
+  fields: names from `datasource_get`, every metric needs an explicit aggregation by name
+  (`SUM`, `COUNT_DISTINCT`, `AVG`, `MIN`, `MAX`, `AUTO`, ...).
 - `components_fields`, `components_switch_type`, `components_geometry`,
   `components_arrange`, `components_layers`, `page_insert_space` (room for a new section), `components_duplicate`,
   `components_copy_to_page`, `components_scope` (report-level vs page-level),

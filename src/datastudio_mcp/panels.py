@@ -452,6 +452,14 @@ _PANEL = r"""async ({reportId,kind,pageId,componentId,mode,version,search,change
         }
         const inputs=await panel.getPropertyInputConfig(model);
         const input=Object.hasOwn(inputs,key)?inputs[key]:null,b=input?.bindingMethods;
+        // A key this panel does not have: name the panel's keys that look like it (a table
+        // sorts with sortConcept1, sortConcept2, ... where a chart has sortConcept).
+        if(!input){
+            const stem=key.replace(/\d+$/,'').toLowerCase();
+            const similar=Object.keys(inputs).filter(k=>k.replace(/\d+$/,'').toLowerCase()===stem)
+                .slice(0,5);
+            return {error:'UNKNOWN_PROPERTY',details:{key,similar}};
+        }
         // A panel button (Add reference line, Add band): true clicks it. It fills the next
         // free slot with the panel's defaults, which opens that slot's inputs.
         if(input?.type==='actionButton'&&typeof input.action==='function'){

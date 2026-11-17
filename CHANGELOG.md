@@ -1,10 +1,19 @@
 # Changelog
 
-## Unreleased
+## 0.6.7 - 2026-11-17
 
 - `page_screenshot` captures visible pages of older reports whose URL shows another page
   token than the page ID (`/page/SEHDG` for `89400174`); before, it answered
   `PAGE_NOT_SHOWN`. Hidden pages, pages in hidden sections and unknown IDs are still refused.
+- Aggregations take names as well as codes everywhere (`SUM`, `AVG`, `COUNT`,
+  `COUNT_DISTINCT`, `MIN`, `MAX`, `MEDIAN`, `VARIANCE`, `STDDEV`, `AUTO`, `NONE`), each
+  confirmed on known data; an unknown name or a code outside 0-14 is refused before
+  anything is sent. Before, a mistyped code silently counted rows instead of distinct values.
+- `settings_set` / `settings_set_batch` answer `UNKNOWN_PROPERTY` with the panel's similar
+  keys for a key the panel does not have (`sortConcept` on a table: `sortConcept1`, ...);
+  before, the error read `PROPERTY_NOT_WRITABLE`.
+- `settings_set_batch` reports every component's changes under `steps`; before, the
+  result showed only the last component's.
 
 ## 0.6.6 - 2026-11-17
 
