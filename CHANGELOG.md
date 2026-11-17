@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.6 - 2026-11-17
+
+- `datasource_sharing_get` / `_set` on an embedded datasource answer `EMBEDDED_DATASOURCE`
+  (it shares with its report) instead of a misleading `AUTH_REQUIRED`.
+- `components_create` sorts a chart whose first dimension is a date (day, month, week,
+  timestamp) by that date, oldest first, as the editor does; before, months came out in
+  order of the metric.
+
 ## 0.6.5 - 2026-11-17
 
 First public release of MCP for Google Datastudio by Max Omen.

@@ -119,3 +119,19 @@ def test_refusals(tmp_path, members, expected, code):
     with pytest.raises(StudioError) as error:
         asyncio.run(service.grant(SOURCE, members, expected, dry_run=False))
     assert error.value.code == code and sent == []
+
+
+def test_embedded_source_says_it_shares_with_its_report(tmp_path):
+    service, session, _ = sharing(tmp_path, {OWNER: "owner"})
+
+    async def refused(endpoint, body):
+        raise StudioError("AUTH_REQUIRED", "Login or editing permission is required")
+
+    async def embedded(source_id):
+        return {"embedded_in_report_id": "0f0f0f0f-1a1a-4b2b-8c3c-4d4d4d4d4d4d"}
+
+    session.post = refused
+    service.studio.datasource = embedded
+    with pytest.raises(StudioError) as error:
+        asyncio.run(service.get(SOURCE))
+    assert error.value.code == "EMBEDDED_DATASOURCE"

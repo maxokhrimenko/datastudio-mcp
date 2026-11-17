@@ -18,6 +18,13 @@ reCAPTCHA-guarded request), scheduled email delivery, report creation/copy/delet
 datasources from connectors other than BigQuery, and datasource deletion. Reusable sources
 have consumers outside the active report and must be identified as such in plans.
 
+## Language
+
+English only, everywhere in this repository, with no exceptions: code, comments,
+docstrings, tests, documentation, commit messages, branch names, pull request titles and
+descriptions, review comments, issues, changelog entries, tags and release notes. Not a
+single word in another language reaches the repository or its GitHub pages.
+
 ## Invariants
 
 - No arbitrary browser JavaScript or arbitrary endpoint execution exposed as tools.

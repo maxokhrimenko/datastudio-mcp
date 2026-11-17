@@ -168,3 +168,17 @@ def test_preflight_requires_source_and_metric_aggregation(tmp_path):
         assert session.writes == 0
 
     asyncio.run(scenario())
+
+
+def test_a_date_first_dimension_marks_a_time_axis():
+    month = NewComponent(type="simple-linechart", datasource_id="ds",
+                         dimensions=[{"name": "month"}], metrics=[{"name": "gross", "aggregation": 6}])
+    by_kind = NewComponent(type="simple-barchart", datasource_id="ds",
+                           dimensions=[{"name": "kind"}], metrics=[{"name": "gross", "aggregation": 6}])
+    fields = {"ds": {"month": {"dataType": 8}, "kind": {"dataType": 0}}}
+    requests = creation_requests([month, by_kind], None, fields)
+    assert [r["time_axis"] for r in requests] == [True, False]
+    week = NewComponent(type="simple-linechart", datasource_id="ds", dimensions=[
+        {"expression": "DATETIME_TRUNC(t0.day, WEEK)", "aggregation": 0}], metrics=[])
+    validated = {("0", "DATETIME_TRUNC(t0.day, WEEK)"): {"type": 0, "dataType": 9}}
+    assert creation_requests([week], validated)[0]["time_axis"] is True

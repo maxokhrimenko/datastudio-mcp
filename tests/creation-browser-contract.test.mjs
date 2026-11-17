@@ -89,6 +89,14 @@ test('explicit fields install definitions, roles and default sort; empty role st
   assert.equal(value.error,undefined);
 });
 
+test('a date axis sorts by the date, oldest first; otherwise by the metric, largest first',async()=>{
+  const fields={dimensions:[{name:'qt_month',namespace:'t0'}],metrics:[{name:'qt_gross',namespace:'t0'}]};
+  const time=await run({spec:{...SPEC,time_axis:true,field_definitions:fields}});
+  assert.deepEqual(time.applied.keys.sortData,[{sortColumn:'qt_month',sortDir:0}]);
+  const size=await run({spec:{...SPEC,time_axis:false,field_definitions:fields}});
+  assert.deepEqual(size.applied.keys.sortData,[{sortColumn:'qt_gross',sortDir:1}]);
+});
+
 test('guards stop before or after creation with a stable code',async()=>{
   const cases=[
     [{responsive:true},'RESPONSIVE_LAYOUT_REQUIRES_SEPARATE_OPERATION'],

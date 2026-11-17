@@ -37,10 +37,30 @@ class NewComponent(BaseModel):
     rotation: float = 0
 
 
-def creation_requests(specs: list[NewComponent], validated: dict | None = None) -> list[dict]:
+# Datasource dataType of dates, date parts (month, week, quarter) and timestamps.
+TIME_TYPES = frozenset({8, 9, 10})
+
+
+def time_axis(spec: NewComponent, index: int, fields: dict[str, dict] | None,
+              validated: dict | None) -> bool:
+    """The first dimension is a date: the chart reads along time, not by size."""
+    if not spec.dimensions:
+        return False
+    first = spec.dimensions[0]
+    expression = getattr(first, "expression", None)
+    if expression is not None:
+        column = (validated or {}).get((str(index), expression)) or {}
+        return column.get("dataType") in TIME_TYPES
+    return (fields or {}).get(first.name, {}).get("dataType") in TIME_TYPES
+
+
+def creation_requests(specs: list[NewComponent], validated: dict | None = None,
+                      source_fields: dict[str, dict[str, dict]] | None = None) -> list[dict]:
     requests = []
     for index, spec in enumerate(specs):
         request = spec.model_dump()
+        request["time_axis"] = time_axis(
+            spec, index, (source_fields or {}).get(spec.datasource_id), validated)
         selection = FieldSelection(
             component_id=str(index),
             dimensions=[ChartField(**field.model_dump()) for field in spec.dimensions],
@@ -79,6 +99,7 @@ class Creation:
         # Read-only preparation: sources must be readable with equal draft/published
         # schemas; every expression is validated natively before anything is created.
         source_tokens = {}
+        source_fields: dict[str, dict[str, dict]] = {}
         resources = report_content((await self.studio.report())["reportConfig"]).get(
             "resource", {})
         blends = {e["key"] for e in resources.get("dataViewResource", {}).get("entry", [])}
@@ -107,6 +128,11 @@ class Creation:
                     "Component creation requires matching draft/published schema",
                 )
             source_tokens[source_id] = fingerprint(source)
+            source_fields[source_id] = {
+                f["field"]["name"]: f
+                for f in source["published"].get("datasourceBlock", {}).get("fields", [])
+                if isinstance(f.get("field"), dict)
+            }
         validated = {}
         for index, spec in enumerate(specs):
             for field in spec.dimensions + spec.metrics:
@@ -125,7 +151,7 @@ class Creation:
 
         result = await NativeOps(self.studio).run(
             _PREPARE,
-            {"specs": creation_requests(specs, validated)},
+            {"specs": creation_requests(specs, validated, source_fields)},
             page_id=page_id,
             expected_fingerprint=expected,
             dry_run=dry_run,
@@ -213,12 +239,15 @@ _PREPARE = """async args => {
                     'dimension; for several metrics side by side or stacked use preset default '+
                     'and settings_set showStack');
             const fields=spec.field_definitions;
-            const sort=fields.metrics[0]?.name||fields.dimensions[0]?.name;
+            // A date axis reads along time: oldest first, as the editor sorts a date dimension.
+            // Otherwise the largest values come first.
+            const byTime=spec.time_axis&&fields.dimensions[0]?.name;
+            const sort=byTime||fields.metrics[0]?.name||fields.dimensions[0]?.name;
             // Only a preset that sorts (bars, tables: a default sortData) takes the sort; a
             // bullet or gauge has none, and the server refuses one.
             const presetSort=c.getDataSourceKeyValue('sortData');
             if(sort&&Array.isArray(presetSort)&&presetSort.length){
-                c.setDataSourceKeyValue('sortData',[{sortColumn:sort,sortDir:1}]);
+                c.setDataSourceKeyValue('sortData',[{sortColumn:sort,sortDir:byTime?0:1}]);
                 // The chart sorts by its behavior, which keeps the preset's sort until synced.
                 R.exported('sortBehaviorSync')(c);
             }

@@ -34,8 +34,18 @@ class Sharing:
         self.studio = studio
 
     async def get(self, source_id: str) -> dict[str, Any]:
-        payload = await self.studio.session.post(
-            "getSharing", {"datastudioEntity": {"uuid": source_id, "type": DATASOURCE}})
+        try:
+            payload = await self.studio.session.post(
+                "getSharing", {"datastudioEntity": {"uuid": source_id, "type": DATASOURCE}})
+        except StudioError as exc:
+            # An embedded source has no access list of its own: getSharing refuses it.
+            if exc.code == "AUTH_REQUIRED" and (
+                    await self.studio.datasource(source_id)).get("embedded_in_report_id"):
+                raise StudioError(
+                    "EMBEDDED_DATASOURCE",
+                    "An embedded datasource has no sharing of its own: whoever can open or "
+                    "edit its report can use it. Share the report instead") from exc
+            raise
         data = payload.get("sharingData")
         if not isinstance(data, dict) or not isinstance(data.get("sharingData"), list):
             raise StudioError("INVALID_RESPONSE", "getSharing returned an unexpected shape")

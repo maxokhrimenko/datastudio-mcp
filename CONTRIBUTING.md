@@ -8,9 +8,14 @@ Thanks for helping to improve MCP for Google Datastudio by Max Omen.
 2. Make the change. Follow [CLAUDE.md](CLAUDE.md): every write is previewed,
    fingerprint-checked, journalled and read back; no company-, customer- or person-specific
    data in code, tests or docs (use example IDs, emails and project names).
-3. Run the offline tests: `uv sync --frozen && uv run pytest -q`.
-4. Add a line to `CHANGELOG.md` for any user-visible change.
-5. Open a pull request against `main` and tick the contributor-terms box in the template.
+3. Write everything in English (see below).
+4. Run the offline tests: `uv sync --frozen && uv run pytest -q`.
+5. Add a line to `CHANGELOG.md` for any user-visible change.
+6. Open a pull request against `main` and tick the contributor-terms box in the template.
+
+**English only.** Everything you contribute is in English: code, comments, tests, docs,
+commit messages, branch names, pull request titles and descriptions, and review comments.
+Contributions in any other language are not accepted.
 
 Only the author merges into `main`. Large changes: open an issue first to agree on the
 approach.
