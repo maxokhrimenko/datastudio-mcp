@@ -5,7 +5,7 @@ description: "How to install and drive the datastudio MCP (mcp__datastudio__* to
 
 # Datastudio MCP
 
-Skill version **0.6.8**, for datastudio-mcp **0.6.8**. `report_open` returns
+Skill version **0.6.9**, for datastudio-mcp **0.6.9**. `report_open` returns
 `mcp_version`; if it differs, this skill is stale: reinstall it (below) or read the
 repo's `skills/datastudio-mcp/SKILL.md` and `CHANGELOG.md`.
 
@@ -18,6 +18,12 @@ Google changed something (`bundle_contracts`).
 Done by people only, never by the MCP: report sharing, changing or removing existing
 datasource access, scheduled email delivery, report creation/copy/deletion, datasources
 from connectors other than BigQuery, datasource deletion. Say so instead of trying.
+
+Connectors: new datasources are created from BigQuery only (`datasource_create_bigquery`).
+For Sheets, GA, Ads, CSV and any other connector, ask the user to create the datasource
+in the Datastudio UI once; then every tool works with it (`datasource_add_to_report`,
+charts, fields, calculated fields, parameters, settings, sharing). Only `bigquery_browse`
+and the default account of `datasource_credentials_set` are BigQuery-specific.
 
 ## Install
 
@@ -155,7 +161,8 @@ Recovery
 
 Build a report end to end
 1. `report_open` → `datasources_list`; data missing: `bigquery_browse` →
-   `datasource_create_bigquery` (dry run first: it validates SQL and returns field names).
+   `datasource_create_bigquery` (dry run first: it validates SQL and returns field names);
+   another connector: the user creates it in the UI, then `datasource_add_to_report`.
 2. Calculated fields on the datasource (`formula_validate` first).
 3. Theme: `settings_describe({"kind":"report"}, "theme")` → `settings_set` (font,
    palette, radius, canvas size) or `theme_from_image`.
