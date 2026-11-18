@@ -1,0 +1,27 @@
+name: Enhancement
+description: Something the Datastudio editor can do that the MCP cannot do yet.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English only. Check [Not done by the MCP](https://github.com/maxokhrimenko/datastudio-mcp/blob/main/README.md#not-done-by-the-mcp) first: those actions stay with people by design.
+        **This repository is public.** No company data or private report IDs.
+  - type: textarea
+    id: action
+    attributes:
+      label: The editor action
+      description: Where it is in the editor (menu, panel, button) and what it changes in the report.
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why you need it
+    validations:
+      required: true
+  - type: input
+    id: inventory
+    attributes:
+      label: Inventory row (optional)
+      description: The row of docs/inventory/ui-inventory.md, if there is one.

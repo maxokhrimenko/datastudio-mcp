@@ -1,0 +1,59 @@
+name: Bug
+description: A tool does something wrong.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English only. Read the [issue rules](https://github.com/maxokhrimenko/datastudio-mcp/blob/main/ISSUE_RULES.md) first.
+        **This repository is public.** Never paste cookies, tokens, emails, names, company data, or IDs and URLs of private reports: use `<report-id>`, `user@example.com`, `example-project`.
+        An error ending in `_CONTRACT_CHANGED` or `NATIVE_CONTRACT_FAILED` goes to the **Editor change** form.
+  - type: input
+    id: version
+    attributes:
+      label: MCP version
+      description: "`mcp_version` from the `report_open` result."
+      placeholder: "0.6.10"
+    validations:
+      required: true
+  - type: input
+    id: client
+    attributes:
+      label: MCP client and OS
+      placeholder: "Claude Code 2.x, macOS 15"
+    validations:
+      required: true
+  - type: textarea
+    id: call
+    attributes:
+      label: Tool and input
+      description: The tool name and its arguments, redacted.
+      render: json
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: The `status` and the error code and message, verbatim. Facts only.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: What the editor does, or what the docs say, in the same situation.
+    validations:
+      required: true
+  - type: textarea
+    id: repeat
+    attributes:
+      label: Does it repeat?
+      description: Always, sometimes, once; on which kind of report, page or chart.
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Your guess (optional)
+      description: What you think causes it. Keep guesses here, apart from the facts above.

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Issue rules
+    url: https://github.com/maxokhrimenko/datastudio-mcp/blob/main/ISSUE_RULES.md
+    about: How to write an issue, the labels, and what never to paste in a public issue.
+  - name: Report a security problem privately
+    url: https://github.com/maxokhrimenko/datastudio-mcp/security/advisories/new
+    about: Vulnerabilities go to a private security advisory, not to a public issue.

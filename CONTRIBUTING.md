@@ -18,7 +18,7 @@ commit messages, branch names, pull request titles and descriptions, and review 
 Contributions in any other language are not accepted.
 
 Only the author merges into `main`. Large changes: open an issue first to agree on the
-approach.
+approach. Issues follow [ISSUE_RULES.md](ISSUE_RULES.md).
 
 ## Contributor terms
 
