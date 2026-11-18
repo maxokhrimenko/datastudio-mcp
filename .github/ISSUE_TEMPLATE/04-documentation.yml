@@ -1,0 +1,24 @@
+name: Documentation
+description: The README, the skill or another doc is wrong or missing something.
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: English only. Read the [issue rules](https://github.com/maxokhrimenko/datastudio-mcp/blob/main/ISSUE_RULES.md) first.
+  - type: input
+    id: where
+    attributes:
+      label: File and section
+      placeholder: "README.md › Configuration"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What is wrong or missing
+    validations:
+      required: true
+  - type: textarea
+    id: fix
+    attributes:
+      label: Corrected text (optional)

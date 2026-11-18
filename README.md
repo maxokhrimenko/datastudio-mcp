@@ -203,7 +203,7 @@ request against `main`; the author reviews and merges every change. Read
 [CONTRIBUTING.md](CONTRIBUTING.md) first: by opening a pull request you agree to its
 contributor terms, which let the author keep offering the whole product under both the
 noncommercial and commercial licenses. Bugs and ideas go to
-[issues](https://github.com/maxokhrimenko/datastudio-mcp/issues).
+[issues](https://github.com/maxokhrimenko/datastudio-mcp/issues); see [ISSUE_RULES.md](ISSUE_RULES.md).
 
 ## License and permitted use
 

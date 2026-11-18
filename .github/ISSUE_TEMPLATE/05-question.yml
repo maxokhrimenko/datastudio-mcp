@@ -1,0 +1,19 @@
+name: Question or commercial license
+description: You need an answer or a decision, including a commercial license.
+labels: ["question"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English only. For a commercial license, title the issue `Commercial license` and say how you plan to use the MCP; do not post contract details here.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What you are trying to do, the MCP version and client if relevant.

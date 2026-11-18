@@ -1,0 +1,36 @@
+name: Editor change
+description: A tool fails with *_CONTRACT_CHANGED or NATIVE_CONTRACT_FAILED.
+labels: ["editor-change"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        English only. Google changed the Datastudio editor and the MCP stopped instead of writing something wrong.
+        **This repository is public.** Redact report IDs, emails and company data.
+  - type: input
+    id: version
+    attributes:
+      label: MCP version
+      placeholder: "0.6.10"
+    validations:
+      required: true
+  - type: textarea
+    id: failure
+    attributes:
+      label: Failing tool and error
+      description: The tool name, the error code and the message, verbatim.
+    validations:
+      required: true
+  - type: textarea
+    id: contracts
+    attributes:
+      label: bundle_contracts result
+      description: The changed entries of `bundle_contracts` for the same report.
+      render: json
+    validations:
+      required: true
+  - type: input
+    id: first-seen
+    attributes:
+      label: First seen (UTC date)
+      placeholder: "2026-11-18"
