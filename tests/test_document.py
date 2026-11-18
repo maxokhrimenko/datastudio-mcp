@@ -120,3 +120,12 @@ def test_palette_picker_annotations_are_not_written():
                           "available": True, "disabled": False}, "available": "kept"}
     assert normalize_colors(value) == {"colColor": {"color": "#fd3433", "seriesRef": {"index": 0}},
                                        "available": "kept"}
+
+
+def test_fingerprint_tokens_are_stable_and_domain_separated():
+    import hashlib
+
+    # Pinned: a change here invalidates every fingerprint clients hold.
+    assert fingerprint({}) == "5e777f81695de7cf221bd526405251969489a2504ef6d7eb44245a71369e27d3"
+    assert fingerprint({"a": [1, "é"]}) == fingerprint({"a": [1, "é"]})
+    assert fingerprint({}) != hashlib.sha256(b"{}").hexdigest()
