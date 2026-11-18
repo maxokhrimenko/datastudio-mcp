@@ -13,10 +13,14 @@ from pydantic import BaseModel, ConfigDict, model_validator
 from .browser import StudioError
 
 
+# Domain-separates fingerprint tokens from plain content hashes, so a token is never
+# mistaken for (or compared with) a SHA-256 of the same JSON computed elsewhere.
+_DOMAIN = "dsmcp-fp/2.bf5d439ef92ead2b"
+
+
 def fingerprint(value: Any) -> str:
-    return hashlib.sha256(
-        json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()
-    ).hexdigest()
+    canonical = json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(f"{_DOMAIN}\n{canonical}".encode()).hexdigest()
 
 
 class Patch(BaseModel):

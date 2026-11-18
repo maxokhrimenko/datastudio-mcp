@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.10 - 2026-11-18
+
+- Fingerprint tokens are domain-separated from plain content hashes. A fingerprint read
+  before upgrading answers `VERSION_CONFLICT` once; read the entity again.
+
 ## 0.6.9 - 2026-11-17
 
 - Documentation: the README and the skill say plainly which connectors the MCP works

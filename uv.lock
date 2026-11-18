@@ -185,7 +185,7 @@ wheels = [
 
 [[package]]
 name = "datastudio-mcp"
-version = "0.6.9"
+version = "0.6.10"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
