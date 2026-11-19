@@ -610,6 +610,42 @@ def create_server(config: BrowserConfig, *, browser: Browser | None = None) -> F
         )
 
     @mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": True})
+    async def datasource_connection_set(
+        datasource_id: str,
+        source: BigQuerySource,
+        expected_fingerprint: str,
+        dry_run: bool = True,
+        allow_shared_source: StrictBool = False,
+        allow_in_use: StrictBool = False,
+        report_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Point a BigQuery datasource at another table or a custom query, as the editor's
+        Edit connection > Reconnect does (table to custom query, query to table, or a new
+        query).
+
+        source: {project_id, dataset_id, table_id} for a table, or {project_id (billing
+        project), sql, legacy_sql?, date_range_params?, viewer_email_param?} for a custom
+        query; name is ignored. Fields match the new columns by column name and keep every
+        edit; calculated fields and parameters stay. Columns the new connection lacks are
+        removed: blocked when a formula or the report in scope uses them unless
+        allow_in_use=true. The dry run reads the new columns (validating access and SQL)
+        and lists connection from/to, added, missing and retyped columns. Publication is
+        journaled, read back and reversible with operation_restore.
+        """
+        return await source_call(
+            datasource_id,
+            report_id,
+            lambda b, source_id: b.datasources.refresh_fields(
+                source_id,
+                expected_fingerprint,
+                dry_run=dry_run,
+                allow_shared_source=allow_shared_source,
+                allow_in_use=allow_in_use,
+                connector_config=source.connector_config()["connectorConfig"],
+            ),
+        )
+
+    @mcp.tool(annotations={"readOnlyHint": False, "destructiveHint": True})
     async def datasource_credentials_set(
         datasource_id: str,
         service_account: str | None = None,

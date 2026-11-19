@@ -275,6 +275,37 @@ def canonical_account(draft: dict[str, Any]) -> str:
     return template.format(project=projects.pop())
 
 
+# BigQuery connector keys the server derives when a connection changes (the dataset's
+# location, empty parameter lists); a new connection is written without them.
+SERVER_FILLED = ("processingLocation", "queryParameters", "parameterStructs")
+
+
+def with_server_fills(intended: dict[str, Any], actual: dict[str, Any]) -> dict[str, Any]:
+    """The intended draft plus the connector keys the server filled in and it left out."""
+    expected = copy.deepcopy(intended)
+    for mine, theirs in zip(expected.get("blocks", []), actual.get("blocks", []), strict=False):
+        config = mine.get("connectorBlockConfig", {}).get("connectorConfig", {}).get(
+            "bigQueryConnectorConfig")
+        filled = theirs.get("connectorBlockConfig", {}).get("connectorConfig", {}).get(
+            "bigQueryConnectorConfig")
+        if isinstance(config, dict) and isinstance(filled, dict):
+            for key in SERVER_FILLED:
+                if key not in config and key in filled:
+                    config[key] = copy.deepcopy(filled[key])
+    return expected
+
+
+def connection_summary(config: dict[str, Any]) -> dict[str, Any]:
+    """What a BigQuery connector reads: a table or a custom query."""
+    bq = config.get("bigQueryConnectorConfig") or {}
+    if config.get("sql") is not None:
+        return {"sql": config["sql"], "billing_project_id": bq.get("billingProjectId")
+                or bq.get("projectId"), "legacy_sql": bq.get("sqlType") == 1,
+                "parameters": [p.get("key") for p in (config.get("parameterConfiguration")
+                               or {}).get("parameters", [])]}
+    return {"table": ".".join(str(bq.get(k)) for k in ("projectId", "datasetId", "tableId"))}
+
+
 def source_state(source: dict[str, Any]) -> dict[str, Any]:
     return {"draft": source["draft"], "published": source["published"]}
 
@@ -1044,12 +1075,15 @@ class Datasources:
         dry_run: bool = True,
         allow_shared_source: bool = False,
         allow_in_use: bool = False,
+        connector_config: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """The editor's Refresh fields: take the connector's current columns.
 
         New columns become fields; fields whose column is gone are removed; every surviving
         field keeps its labels, types, aggregation and description as edited. Calculated
-        fields and parameters are untouched.
+        fields and parameters are untouched. With connector_config it is the editor's Edit
+        connection > Reconnect: the connector points at the new table or query first, and
+        fields match the new columns by column name.
         """
         async with self.studio.mutation_lock():
             source = await self.studio.datasource(source_id)
@@ -1067,6 +1101,15 @@ class Datasources:
                     "Refresh needs a datasource with exactly one connector block",
                 )
             connector = connectors[0]
+            connection = None
+            if connector_config is not None:
+                old = connector["connectorBlockConfig"].get("connectorConfig", {})
+                if "bigQueryConnectorConfig" not in old:
+                    raise StudioError("UNSUPPORTED_SOURCE_SHAPE",
+                                      "Only a BigQuery datasource can be reconnected here")
+                connector["connectorBlockConfig"]["connectorConfig"] = connector_config
+                connection = {"from": connection_summary(old),
+                              "to": connection_summary(connector_config)}
             columns = await self.studio.session.columns(
                 source_id, connector["connectorBlockConfig"]
             )
@@ -1133,6 +1176,7 @@ class Datasources:
             ] + [copy.deepcopy(offered[name]) for name in added]
             plan = {
                 "datasource_id": source_id,
+                **({"connection": connection} if connection else {}),
                 "added_columns": added,
                 "missing_columns": missing,
                 "retyped_columns": retyped,
@@ -1298,7 +1342,8 @@ class Datasources:
             actual = source_state(await self.studio.datasource(source_id))
             record["after"] = actual
             mismatches = [
-                key for key in ("draft", "published") if not json_equal(draft, actual[key])
+                key for key in ("draft", "published")
+                if not json_equal(with_server_fills(draft, actual[key] or {}), actual[key])
             ]
             record["mismatches"] = mismatches
             record["state"] = "verification_failed" if mismatches else "verified"

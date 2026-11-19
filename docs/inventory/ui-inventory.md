@@ -194,6 +194,7 @@ Runtime (viewer) use of controls: `control_filter_set`, `control_checkbox_set`,
 | My data sources (reusable) → Add | `datasource_add_to_report` | ✅ |
 | Data credentials (owner/viewer) | `datasource_credentials_set` | ✅ (earlier) |
 | Refresh fields / reconnect | `datasource_refresh_fields` | ✅ (earlier) |
+| Edit connection › another table / custom query (and back) | `datasource_connection_set` | ✅ 2026-11-19 in the sandbox: table → custom query (+1 column), → narrower query (10 columns removed), → table again, all `verified` in draft and published; field labels and calculated fields kept, removing a column a formula uses blocked; a chart showed the query's data. Written as Refresh fields with the new `connectorConfig` (the server derives `processingLocation`); the editor's Reconnect button does not render in headless Chrome, so the UI wire was not captured |
 | Field type, semantic, aggregation, label, description, enable | `datasource_fields_edit_metadata`, `datasource_fields_rename` | ✅ |
 | Data freshness (cache policy), community viz access, field editing in reports, native functions | `datasource_settings_set` | ✅ |
 | Other connectors (Sheets, GA, Ads, CSV, …) | — | 👤 people only (owner decision 2026-11-14); existing datasources of any connector are edited by every `datasource_*` tool |

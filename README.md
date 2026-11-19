@@ -110,20 +110,22 @@ profile — signing in to your everyday Chrome does not count.
 | Reports and pages | `report_open`, `report_inspect`, `report_audit`, `pages_create`, `pages_delete`, `page_duplicate`, `pages_import`, `navigation_patch`, `report_rename`, `page_get`, `page_screenshot`, `page_insert_space` |
 | Components | `components_create`, `components_fields`, `components_switch_type`, `components_geometry`, `components_arrange`, `components_layers`, `components_duplicate`, `components_copy_to_page`, `components_delete`, `groups_*`, `image_upload_set` |
 | Every panel setting | `settings_describe`, `settings_set`, `settings_set_batch`, `native_catalog`, `theme_from_image`, `report_theme_copy`, `dimension_value_colors_set` |
-| Data | `datasources_list`, `datasource_get`, `bigquery_browse`, `datasource_create_bigquery`, `datasource_add_to_report`, calculated fields, field metadata, parameters, credentials, `datasource_sharing_get` / `_set` |
+| Data | `datasources_list`, `datasource_get`, `bigquery_browse`, `datasource_create_bigquery`, `datasource_connection_set`, `datasource_add_to_report`, calculated fields, field metadata, parameters, credentials, `datasource_sharing_get` / `_set` |
 | Blends | `blend_create`, `blend_get`, `blends_joins`, `blends_input_filters`, `blends_rename`, `blends_delete` |
 | Filters and controls | `filters_*`, `components_filters`, `page_filters`, `report_filters`, `page_filter_inheritance`, `control_*` |
 | Publishing and history | `report_publishing`, `report_publish`, `revisions_list`, `revision_restore`, `report_links`, `report_pdf`, `image_export` |
 | Recovery | `operation_get`, `operation_restore`, `bundle_contracts` |
 
-109 tools in total. The full editor coverage, item by item, is in
+110 tools in total. The full editor coverage, item by item, is in
 [docs/inventory/ui-inventory.md](docs/inventory/ui-inventory.md).
 
 ### Datasources and connectors
 
 The MCP **creates** new datasources from **BigQuery only**: a table or a custom query
 (`bigquery_browse` → `datasource_create_bigquery`), including date range and viewer email
-parameters.
+parameters. It also switches an existing BigQuery datasource to another table or a custom
+query, or back (`datasource_connection_set`, the editor's *Edit connection*); fields keep
+their edits.
 
 Any other connector (Google Sheets, Google Analytics, Google Ads, Search Console, CSV
 upload, MySQL/PostgreSQL, partner connectors, …) is **added by you** in the Datastudio UI:

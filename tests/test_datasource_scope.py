@@ -5,6 +5,7 @@ from types import SimpleNamespace
 import pytest
 
 from datastudio_mcp import formulas
+from datastudio_mcp.bigquery import BigQuerySource
 from datastudio_mcp.browser import (
     Browser,
     BrowserConfig,
@@ -201,6 +202,70 @@ def test_refresh_blocks_removing_a_column_a_formula_uses(tmp_path, monkeypatch):
         assert result["status"] == "blocked"
         assert result["formula_dependents"] == {"_gone_": ["t0.calc_x"]}
         assert not any(endpoint == "publishDatasource" for endpoint, _ in session.posts)
+
+    asyncio.run(run())
+
+
+def test_reconnect_points_the_connector_at_a_custom_query_and_keeps_field_edits(
+    tmp_path, monkeypatch
+):
+    no_dependents(monkeypatch)
+
+    class FillingSession(StandaloneSession):
+        async def columns(self, datasource_id, block):
+            # The new columns are read through the new connection, not the saved one.
+            assert block["connectorConfig"]["sql"] == "SELECT kept, new FROM t"
+            return await super().columns(datasource_id, block)
+
+        async def post(self, endpoint, body):
+            result = await super().post(endpoint, body)
+            if endpoint == "publishDatasource":  # The server derives the location.
+                for state in (self.draft, self.published):
+                    config = state["blocks"][0]["connectorBlockConfig"]["connectorConfig"]
+                    config["bigQueryConnectorConfig"]["processingLocation"] = 301
+            return result
+
+    async def run():
+        session = FillingSession(tmp_path)
+        studio = Studio(session)
+        service = Datasources(studio)
+        before = await studio.datasource(SOURCE)
+        query = BigQuerySource(project_id="example-analytics", sql="SELECT kept, new FROM t")
+        config = query.connector_config()["connectorConfig"]
+        plan = await service.refresh_fields(
+            SOURCE, before["fingerprint"], allow_shared_source=True, connector_config=config)
+        assert plan["connection"] == {
+            "from": {"table": "example-analytics.None.None"},
+            "to": {"sql": "SELECT kept, new FROM t", "billing_project_id": "example-analytics",
+                   "legacy_sql": False, "parameters": []}}
+        assert (plan["added_columns"], plan["missing_columns"]) == (["new"], ["gone"])
+        result = await service.refresh_fields(
+            SOURCE, before["fingerprint"], dry_run=False, allow_shared_source=True,
+            connector_config=config)
+        assert result["status"] == "verified"  # server-filled keys are not a mismatch
+        saved = session.published["blocks"][0]["connectorBlockConfig"]["connectorConfig"]
+        assert saved["sql"] == "SELECT kept, new FROM t"
+        assert session.published["datasourceBlock"]["fields"][0]["outputName"] == "Kept label"
+
+    asyncio.run(run())
+
+
+def test_only_a_bigquery_source_is_reconnected(tmp_path, monkeypatch):
+    no_dependents(monkeypatch)
+
+    async def run():
+        session = StandaloneSession(tmp_path)
+        block = session.draft["blocks"][0]["connectorBlockConfig"]
+        block["connectorConfig"] = {"sheetsConnectorConfig": {}}
+        session.published = copy.deepcopy(session.draft)
+        studio = Studio(session)
+        before = await studio.datasource(SOURCE)
+        config = BigQuerySource(project_id="p", sql="SELECT 1").connector_config()
+        with pytest.raises(StudioError) as error:
+            await Datasources(studio).refresh_fields(
+                SOURCE, before["fingerprint"], allow_shared_source=True,
+                connector_config=config["connectorConfig"])
+        assert error.value.code == "UNSUPPORTED_SOURCE_SHAPE"
 
     asyncio.run(run())
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.12 - 2026-11-19
+
+- New `datasource_connection_set`: point a BigQuery datasource at another table or a
+  custom query, or back, as the editor's Edit connection does. The dry run reads the new
+  columns (validating access and SQL) and lists the connection from/to, added, missing and
+  retyped columns; fields keep their labels, types and descriptions; calculated fields
+  and parameters stay; removing a column a formula or the report uses is blocked unless
+  `allow_in_use`. Journalled, read back, reversible with `operation_restore`.
+- Datasource writes no longer report `verification_failed` when the server only fills in
+  derived BigQuery connector keys (`processingLocation`, empty parameter lists).
+
 ## 0.6.11 - 2026-11-19
 
 - `datasource_sharing_set` answers `SHARING_RATE_LIMITED` when Google's reCAPTCHA refuses
