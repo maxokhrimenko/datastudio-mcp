@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.13 - 2026-11-19
+
+- `datasource_create_bigquery` with `attach_to_report=false` creates a reusable datasource
+  again. It is created in the account's own Data Studio project, as Create > Data source
+  does; before, the request had no project and Google answered HTTP 400.
+
 ## 0.6.12 - 2026-11-19
 
 - New `datasource_connection_set`: point a BigQuery datasource at another table or a
