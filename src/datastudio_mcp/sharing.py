@@ -144,7 +144,8 @@ class Sharing:
                 fresh = await self.get(source_id)
                 after = roles(fresh["members"])
                 added = [e for e, r in changes.items() if after.get(e) == r]
-                record.update(state="rejected", error=exc.code, after=fresh["members"])
+                state = "dispatch_failed" if exc.outcome_unknown else "rejected"
+                record.update(state=state, error=exc.code, after=fresh["members"])
                 self.studio._journal(record["operation_id"], record)
                 if added:
                     raise StudioError(exc.code, f"{exc} Already added: {', '.join(added)}",
