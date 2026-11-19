@@ -5,7 +5,7 @@ description: "How to install and drive the datastudio MCP (mcp__datastudio__* to
 
 # Datastudio MCP
 
-Skill version **0.6.11**, for datastudio-mcp **0.6.11**. `report_open` returns
+Skill version **0.6.12**, for datastudio-mcp **0.6.12**. `report_open` returns
 `mcp_version`; if it differs, this skill is stale: reinstall it (below) or read the
 repo's `skills/datastudio-mcp/SKILL.md` and `CHANGELOG.md`.
 
@@ -121,7 +121,10 @@ Data
 - `datasources_list`, `datasource_get`, `bigquery_browse` → `datasource_create_bigquery`
   (table or custom query; `date_range_params`, `viewer_email_param`),
   `datasource_add_to_report`, `datasources_remove_from_report`, `datasource_rename`,
-  `datasource_settings_set`, `datasource_credentials_set`, `datasource_refresh_fields`.
+  `datasource_settings_set`, `datasource_credentials_set`, `datasource_refresh_fields`,
+  `datasource_connection_set` (Edit connection: table ↔ custom query or another table;
+  dry run first, it validates the SQL and lists added/missing columns; fields keep edits,
+  removing a column in use is blocked unless `allow_in_use`).
 - Fields: `datasource_fields_rename`, `datasource_fields_edit_metadata`,
   `datasource_calculated_fields_create`, `datasource_calculated_fields_edit`,
   `datasource_calculated_fields_delete`, `formula_validate`,
@@ -130,7 +133,8 @@ Data
   `datasource_parameters_delete`.
 - Access: `datasource_sharing_get` (members and roles), `datasource_sharing_set` (add
   viewers/editors through the Share dialog; exact emails only, notify off by default;
-  Google's reCAPTCHA may refuse a long automated series: a person shares the rest).
+  Google's reCAPTCHA may refuse automated shares, `SHARING_RATE_LIMITED`: do not retry
+  now; a person shares it by the link in the message, or retry hours later).
   One business rule used by many metrics (e.g. which exits count as attrition) belongs in
   ONE calculated field; the other formulas reference it as `t0.calc_*`.
 - Blends: `blend_create` (2-5 tables, join keys must be dimensions; the result

@@ -755,7 +755,7 @@ class ReportSession:
         if result.get("status") != 200 or not isinstance(result.get("columns"), list):
             raise StudioError(
                 "CONNECTOR_UNAVAILABLE",
-                "The connector returned no column list; check its credentials and table",
+                "The connector returned no column list; check its credentials, table or SQL",
             )
         return result["columns"]
 
