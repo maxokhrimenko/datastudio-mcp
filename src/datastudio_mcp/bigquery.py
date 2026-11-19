@@ -117,6 +117,17 @@ _TREE = REQUEST_SCRIPT + """
 }"""
 
 _CREATE = REQUEST_SCRIPT + """
+    // A source is created in a Cloud project: the report's, or for a reusable source the
+    // account's own Data Studio project, which every page carries in its preload config.
+    const preload = (() => {
+        try {return typeof window.preload === 'string' ? JSON.parse(window.preload)
+                                                         : window.preload}
+        catch {return null}
+    })();
+    args.projectNumber = args.projectNumber || preload?.myDataStudioConfig?.projectNumber;
+    if (!args.dryRun && !args.projectNumber)
+        return {error: 'PROJECT_NUMBER_MISSING',
+                details: 'No Data Studio project for the new datasource; nothing was created'};
     const access = await request('getFirstPartyAccessToken', {});
     if (access.error || !access.json?.accessToken) return {error:'TOKEN_UNAVAILABLE'};
     const oauth = access.json.accessToken;

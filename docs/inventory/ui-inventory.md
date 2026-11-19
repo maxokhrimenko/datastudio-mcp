@@ -191,6 +191,7 @@ Runtime (viewer) use of controls: `control_filter_set`, `control_checkbox_set`,
 | Table → Add (embedded in report) | `datasource_create_bigquery` table | ✅ |
 | Custom query (standard/legacy, billing project) | `datasource_create_bigquery` sql | ✅ |
 | Custom query › Enable date range parameters / viewer email address parameter | `datasource_create_bigquery` `source.date_range_params` / `viewer_email_param` | ✅ written as the checkboxes write `connectorConfig.parameterConfiguration` (DS_START_DATE/DS_END_DATE dataType 5, DS_USER_EMAIL dataType 1, roles 1+2); verified 2026-11-14: identical to UI wire, saved, SQL with `@DS_*` accepted by getColumns |
+| Create > Data source > BigQuery (reusable, no report) | `datasource_create_bigquery` `attach_to_report=false` | ✅ 2026-11-19: wire captured from the UI (`uiCreateOptions.projectNumber` = the page's `myDataStudioConfig.projectNumber`); a reusable custom-query source created, listed, reconnected to a table |
 | My data sources (reusable) → Add | `datasource_add_to_report` | ✅ |
 | Data credentials (owner/viewer) | `datasource_credentials_set` | ✅ (earlier) |
 | Refresh fields / reconnect | `datasource_refresh_fields` | ✅ (earlier) |
