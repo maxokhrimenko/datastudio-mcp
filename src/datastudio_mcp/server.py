@@ -686,8 +686,9 @@ def create_server(config: BrowserConfig, *, browser: Browser | None = None) -> F
         datasource_id: str, report_id: str | None = None
     ) -> dict[str, Any]:
         """Who can open or edit a reusable datasource: members with owner/editor/viewer
-        role, whether this account may share it, and the fingerprint for
-        datasource_sharing_set."""
+        role (former_account_uid marks a deleted or recreated account), domains that reach
+        it through its link (link_sharing_domains), whether this account may share it, and
+        the fingerprint for datasource_sharing_set."""
         return await source_call(
             datasource_id, report_id, lambda b, source_id: b.sharing.get(source_id))
 
@@ -706,7 +707,8 @@ def create_server(config: BrowserConfig, *, browser: Browser | None = None) -> F
         yet; changing or removing an existing member is refused (a person does it in the
         Share dialog). Runs the datasource's Share dialog as a person does; notify sends
         Google's invitation email. Google checks each update with reCAPTCHA and may refuse
-        a long automated series (SHARING_REJECTED). Journalled; read back.
+        automated shares (SHARING_RATE_LIMITED: nothing changed; do not retry now, wait
+        hours or let the user share by the link in the message). Journalled; read back.
         Use the exact email the user gave or confirmed; never guess an address.
         """
         return await source_call(

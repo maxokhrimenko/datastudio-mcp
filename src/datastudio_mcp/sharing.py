@@ -21,6 +21,30 @@ NAMES = {role: name for name, role in ROLES.items()} | {"roles/datastudio.owner"
 EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
 DATASOURCE = 1  # datastudioEntity.type of a datasource in the sharing API.
 DIALOG = "[role=dialog]"
+LINK_ROLE = "roles/datastudio.linkShared"  # + Editor/Viewer: anyone in a domain with the link.
+FORMER = "?uid="  # Google's suffix on the id of a deleted or recreated account.
+
+
+def entries(sharing_data: list[dict[str, Any]]) -> tuple[list[dict], list[dict]]:
+    """People with their roles, and the domains that reach the source through its link."""
+    people, domains = [], []
+    for entry in sharing_data:
+        ident, role = entry["member"]["id"], entry["role"]
+        if role.startswith(LINK_ROLE):
+            domains.append({"domain": ident, "role": role[len(LINK_ROLE):].lower()})
+            continue
+        email, _, uid = ident.partition(FORMER)
+        person = {"email": email, "name": entry["member"].get("displayName"),
+                  "role": NAMES.get(role, role)}
+        if uid:
+            person["former_account_uid"] = uid
+        people.append(person)
+    return people, domains
+
+
+def roles(members: list[dict[str, Any]]) -> dict[str, str]:
+    """Current roles by email; a former account does not hold the address any more."""
+    return {m["email"].lower(): m["role"] for m in members if "former_account_uid" not in m}
 
 
 class SharingMember(BaseModel):
@@ -50,13 +74,11 @@ class Sharing:
         if not isinstance(data, dict) or not isinstance(data.get("sharingData"), list):
             raise StudioError("INVALID_RESPONSE", "getSharing returned an unexpected shape")
         config = data.get("sharingConfig") or {}
+        people, domains = entries(data["sharingData"])
         return {
             "datasource_id": source_id,
-            "members": [
-                {"email": m["member"]["id"], "name": m["member"].get("displayName"),
-                 "role": NAMES.get(m["role"], m["role"])}
-                for m in data["sharingData"]
-            ],
+            "members": people,
+            "link_sharing_domains": domains,
             "can_edit_sharing": bool(data.get("canEdit")),
             "is_owner": bool(data.get("isOwner")),
             "link_sharing": bool(config.get("allowPublicLinkSharing")),
@@ -76,7 +98,7 @@ class Sharing:
         """Give people without access viewer or editor access through the Share dialog.
 
         Google checks each update with reCAPTCHA: a long series of automated shares can be
-        refused (SHARING_REJECTED, RECAPTCHA_VERIFICATION_FAILED); a person then shares it.
+        refused (SHARING_RATE_LIMITED); a person then shares it, or it is retried hours later.
         """
         wanted: dict[str, str] = {}
         for member in members:
@@ -96,7 +118,7 @@ class Sharing:
                 raise StudioError("VERSION_CONFLICT", "Sharing changed since inspection")
             if not current["can_edit_sharing"]:
                 raise StudioError("SHARING_NOT_ALLOWED", "This account cannot share the source")
-            before = {m["email"].lower(): m["role"] for m in current["members"]}
+            before = roles(current["members"])
             if any(before.get(email) == "owner" for email in wanted):
                 raise StudioError("INVALID_MEMBER", "The owner's role cannot change here")
             changes = {e: r for e, r in wanted.items() if before.get(e) != r}
@@ -115,9 +137,22 @@ class Sharing:
             if dry_run:
                 return {"status": "planned", **plan}
             record = self.studio.journal_action("datasource_sharing", **plan)
-            await self._dialog(source_id, changes, notify)
+            try:
+                await self._dialog(source_id, changes, notify)
+            except StudioError as exc:
+                # One pass per role: an earlier pass may have landed before the refusal.
+                fresh = await self.get(source_id)
+                after = roles(fresh["members"])
+                added = [e for e, r in changes.items() if after.get(e) == r]
+                state = "dispatch_failed" if exc.outcome_unknown else "rejected"
+                record.update(state=state, error=exc.code, after=fresh["members"])
+                self.studio._journal(record["operation_id"], record)
+                if added:
+                    raise StudioError(exc.code, f"{exc} Already added: {', '.join(added)}",
+                                      outcome_unknown=False) from exc
+                raise
             fresh = await self.get(source_id)
-            after = {m["email"].lower(): m["role"] for m in fresh["members"]}
+            after = roles(fresh["members"])
             record["state"] = ("verified" if all(after.get(e) == r for e, r in changes.items())
                                else "verification_failed")
             record["after"] = fresh["members"]
@@ -174,6 +209,12 @@ class Sharing:
             response = await answer.value
             if response.status != 200:
                 reason = " ".join((await response.text()).split())[:300]
+                if "RECAPTCHA_VERIFICATION_FAILED" in reason:
+                    raise StudioError(
+                        "SHARING_RATE_LIMITED",
+                        "Google's reCAPTCHA refused this automated share; nothing changed. "
+                        "Retrying soon makes it worse: wait a few hours, or share it by hand "
+                        f"at {tab.url} (Share)")
                 raise StudioError("SHARING_REJECTED",
                                   f"updateSharing returned HTTP {response.status}: {reason}",
                                   outcome_unknown=True)

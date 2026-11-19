@@ -16,13 +16,14 @@ class Session:
         self.members = dict(members)
         self.etag = 1
         self.posts = []
+        self.extra = []
 
     async def post(self, endpoint, body):
         self.posts.append((endpoint, body))
         assert endpoint == "getSharing" and body["datastudioEntity"]["type"] == 1
         return {"sharingData": {
             "sharingData": [{"member": {"id": e, "displayName": e}, "role": f"roles/datastudio.{r}"}
-                            for e, r in self.members.items()],
+                            for e, r in self.members.items()] + list(self.extra),
             "etag": f"e{self.etag}", "canEdit": True, "isOwner": True,
             "sharingConfig": {"allowPublicLinkSharing": False}}}
 
@@ -135,3 +136,38 @@ def test_embedded_source_says_it_shares_with_its_report(tmp_path):
     with pytest.raises(StudioError) as error:
         asyncio.run(service.get(SOURCE))
     assert error.value.code == "EMBEDDED_DATASOURCE"
+
+
+def test_domains_and_former_accounts_are_not_read_as_people(tmp_path):
+    service, session, _ = sharing(tmp_path, {OWNER: "owner"})
+    session.extra = [
+        {"member": {"id": "example.com"}, "role": "roles/datastudio.linkSharedEditor"},
+        {"member": {"id": "gone@example.com?uid=123"}, "role": "roles/datastudio.viewer"}]
+    state = asyncio.run(service.get(SOURCE))
+    assert state["link_sharing_domains"] == [{"domain": "example.com", "role": "editor"}]
+    assert {"email": "gone@example.com", "name": None, "role": "viewer",
+            "former_account_uid": "123"} in state["members"]
+    # The address of a former account can be shared again.
+    plan = asyncio.run(
+        service.grant(SOURCE, [{"email": "gone@example.com", "role": "viewer"}], "e1"))
+    assert plan["changes"] == [{"email": "gone@example.com", "from": None, "to": "viewer"}]
+
+
+@pytest.mark.parametrize("landed", [False, True])
+def test_a_refused_share_is_journalled_and_names_what_landed(tmp_path, landed):
+    service, session, _ = sharing(tmp_path, {OWNER: "owner"})
+
+    async def refused(source_id, changes, notify):
+        if landed:
+            session.members["v@example.com"] = "viewer"
+        raise StudioError("SHARING_RATE_LIMITED", "Google's reCAPTCHA refused this share.")
+
+    service._dialog = refused
+    with pytest.raises(StudioError) as error:
+        asyncio.run(service.grant(SOURCE, [{"email": "v@example.com", "role": "viewer"},
+                                           {"email": "e@example.com", "role": "editor"}],
+                                  "e1", dry_run=False))
+    assert error.value.code == "SHARING_RATE_LIMITED"
+    assert ("Already added: v@example.com" in str(error.value)) is landed
+    record = service.studio.journal["op"]
+    assert record["state"] == "rejected" and record["error"] == "SHARING_RATE_LIMITED"

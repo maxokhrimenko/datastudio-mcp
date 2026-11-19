@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.11 - 2026-11-19
+
+- `datasource_sharing_set` answers `SHARING_RATE_LIMITED` when Google's reCAPTCHA refuses
+  an automated share: nothing changed, retrying soon makes it worse, and the message links
+  the source's Share dialog for a person. A refused share is journalled as `rejected` and
+  names anyone an earlier pass already added.
+- `datasource_sharing_get` lists domains that reach a source through its link under
+  `link_sharing_domains` instead of as members with a raw role, and marks a deleted or
+  recreated account with `former_account_uid` instead of an email ending in `?uid=...`.
+  Such an address can be shared again.
+
 ## 0.6.10 - 2026-11-18
 
 - Fingerprint tokens are domain-separated from plain content hashes. A fingerprint read
