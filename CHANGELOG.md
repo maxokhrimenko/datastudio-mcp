@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.6.14 - 2026-11-24
+
+- The operation journal keeps entries for 30 days: each journalled write deletes older
+  ones, so `operation_get` and `operation_restore` reach back 30 days. This keeps
+  BigQuery project, dataset and table details within the 30-day limit of Google Cloud's
+  terms for AI access tools.
+
 ## 0.6.13 - 2026-11-19
 
 - `datasource_create_bigquery` with `attach_to_report=false` creates a reusable datasource

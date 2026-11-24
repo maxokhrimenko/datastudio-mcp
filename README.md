@@ -178,7 +178,8 @@ Pass them with `claude mcp add -e NAME=value …` or `codex mcp add --env NAME=v
   never share it or commit it.
 - The MCP exposes no tool that runs arbitrary JavaScript or calls arbitrary endpoints.
 - The operation journal stores before-states of your reports locally; it never leaves
-  your machine.
+  your machine. Entries older than 30 days are deleted on the next write, so
+  `operation_get` / `operation_restore` reach back 30 days.
 - Report security issues privately: open a
   [GitHub security advisory](https://github.com/maxokhrimenko/datastudio-mcp/security/advisories/new).
 

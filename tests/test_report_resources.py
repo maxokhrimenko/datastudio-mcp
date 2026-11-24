@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import os
 
 import pytest
 
@@ -94,6 +95,24 @@ def test_conflict_after_journal_prevents_dispatch(tmp_path):
                 fingerprint(session.saved["report"]), dry_run=False)
         assert not session.writes
         assert len(list(session.config.state_dir.glob("*.json"))) == 1
+    asyncio.run(scenario())
+
+
+def test_journal_write_deletes_entries_older_than_30_days(tmp_path):
+    async def scenario():
+        session = Session(tmp_path, "conflict")
+        state = session.config.state_dir
+        state.mkdir(parents=True)
+        old, recent, marker = state / "old.json", state / "recent.json", state / "last-activity"
+        for path in (old, recent, marker):
+            path.write_text("{}")
+        os.utime(old, (0, 0))
+        os.utime(marker, (0, 0))
+        with pytest.raises(StudioError):
+            await Filters(Studio(session)).rename([FilterRename(filter_id="f1", name="New")],
+                fingerprint(session.saved["report"]), dry_run=False)
+        assert not old.exists() and recent.exists() and marker.exists()
+        assert len(list(state.glob("*.json"))) == 2
     asyncio.run(scenario())
 
 
