@@ -7,6 +7,7 @@ import copy
 import fcntl
 import json
 import os
+import time
 import uuid
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -49,6 +50,11 @@ def credentials(raw: dict[str, Any]) -> dict[str, Any]:
         "type": kind,
         "account": raw.get("storedCredentialOwnerDisplayName") if kind != "viewer" else None,
     }
+
+
+# Google Cloud's Service Specific Terms (section 17) cap how long an AI access tool may
+# keep information about the services it reached, such as BigQuery projects and tables.
+JOURNAL_RETENTION_S = 30 * 24 * 3600
 
 
 # Journalled actions with no automatic undo, and how a person reverses each one.
@@ -315,6 +321,10 @@ class Studio:
             self._sync_directory(self.config.state_dir)
         finally:
             temporary.unlink(missing_ok=True)
+        cutoff = time.time() - JOURNAL_RETENTION_S
+        for old in self.config.state_dir.glob("*.json"):
+            if old.stat().st_mtime < cutoff:
+                old.unlink(missing_ok=True)
         return path
 
     @staticmethod
