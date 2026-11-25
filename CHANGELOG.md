@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.15 - 2026-11-25
+
+- `report_open` and every report tool notice when the MCP's Chrome profile has no Google
+  session. A report shared with anyone opens signed out instead of redirecting to
+  sign-in; before, tools failed with `SESSION_CONTEXT_MISSING`. Now any report tool
+  answers `AUTH_REQUIRED`, and `report_open` opens a window directly on Google sign-in
+  (returning to the report) and answers `login_required`.
+
 ## 0.6.14 - 2026-11-24
 
 - The operation journal keeps entries for 30 days: each journalled write deletes older

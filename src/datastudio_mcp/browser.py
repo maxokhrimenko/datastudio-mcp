@@ -116,6 +116,9 @@ REQUEST_SCRIPT = """async (args) => {
         finally {clearTimeout(timer)}
     };
 """
+# Google sets the RAP XSRF cookie only for a signed-in account. A report shared with anyone
+# opens without one instead of redirecting to sign-in.
+SIGNED_IN_SCRIPT = "() => /(?:^|; )RAP_XSRF_TOKEN=/.test(document.cookie)"
 SESSION_READY_SCRIPT = """() => /(?:^|; )RAP_XSRF_TOKEN=/.test(document.cookie) &&
     performance.getEntriesByType('resource').some(r => {
         try {return Boolean(new URL(r.name).searchParams.get('appVersion'))}
@@ -432,12 +435,15 @@ class Browser:
                 tabs.append((page, report_id))
         return tabs
 
-    async def open_tab(self, reference: str) -> Page:
+    async def open_tab(self, reference: str, *, sign_in: bool = False) -> Page:
+        """Open the report, or Google sign-in that returns to it."""
         report_id = parse_report_reference(reference)
         account = report_account(reference)
         url = f"https://lookerstudio.google.com/reporting/{report_id}"
         if account is not None:
             url += "?" + urlencode({"authuser": account})
+        if sign_in:
+            url = "https://accounts.google.com/ServiceLogin?" + urlencode({"continue": url})
         browser = await self.require()
         context = browser.contexts[0] if browser.contexts else await browser.new_context()
         page = await context.new_page()
@@ -621,6 +627,7 @@ class ReportSession:
             )
             navigated = True
         editable: bool | None = None
+        signed_in = False
         stuck = 0  # failed attempts to leave the editor by its View toggle
         while True:
             if time.monotonic() >= deadline:
@@ -635,6 +642,12 @@ class ReportSession:
             if state is None:
                 await asyncio.sleep(0.3)
                 continue
+            # Signed out, the viewer still loads a model with a numeric version.
+            if not signed_in and not (signed_in := await page.evaluate(SIGNED_IN_SCRIPT)):
+                raise StudioError(
+                    "AUTH_REQUIRED",
+                    "The report opened without a Google session; call report_open to sign in",
+                )
             mode = tab_mode(state["url"], self.config.report_id)
             if mode == "view" and state["version"].isdigit():
                 self.stale = False

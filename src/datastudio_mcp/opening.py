@@ -55,10 +55,13 @@ def _login_tabs(browser: Any, report_id: str | None = None) -> list[Any]:
 
 
 async def _show_for_sign_in(browser: Any, reference: str) -> None:
-    """Sign-in needs a person: reopen the profile's Chrome with a window on the report."""
+    """Sign-in needs a person: reopen the profile's Chrome with a window on Google sign-in.
+
+    Sign-in is opened directly: a report shared with anyone would load signed out.
+    """
     if await browser.headless():
         await browser.relaunch(headless=False)
-        tab = await browser.open_tab(reference)
+        tab = await browser.open_tab(reference, sign_in=True)
         await tab.bring_to_front()
 
 
