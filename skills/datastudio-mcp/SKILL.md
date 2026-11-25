@@ -5,7 +5,7 @@ description: "How to install and drive the datastudio MCP (mcp__datastudio__* to
 
 # Datastudio MCP
 
-Skill version **0.6.14**, for datastudio-mcp **0.6.14**. `report_open` returns
+Skill version **0.6.15**, for datastudio-mcp **0.6.15**. `report_open` returns
 `mcp_version`; if it differs, this skill is stale: reinstall it (below) or read the
 repo's `skills/datastudio-mcp/SKILL.md` and `CHANGELOG.md`.
 
@@ -198,7 +198,8 @@ fix: `settings_set` its `sortConcept` (field name) and `sortDir` again),
 
 ## Errors
 
-- `login_required`: see Session above.
+- `login_required`: see Session above. `AUTH_REQUIRED` from any other tool: the profile
+  has no Google session; call `report_open` to sign in.
 - `NO_ACTIVE_REPORT`: call `report_open` or pass `report_id`.
 - `VERSION_CONFLICT`: re-read, re-plan. `EDITOR_STALE`: `report_refresh`, then retry.
 - `EDITOR_DIRTY`: a human editor tab has unsaved changes; wait, do not discard them.

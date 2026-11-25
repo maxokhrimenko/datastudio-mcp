@@ -10,6 +10,7 @@ from datastudio_mcp.browser import (
     EDIT_TOGGLE,
     MODEL_STATE_SCRIPT,
     REPORT_READY_SCRIPT,
+    SIGNED_IN_SCRIPT,
     BrowserConfig,
     Config,
     ReportSession,
@@ -78,10 +79,12 @@ class Page:
 class EditorTab(Page):
     """Tab whose model state follows the URL: Edit loads a draft model, View keeps it."""
 
-    def __init__(self, url, *, version="7", editable=True, dirty_polls=0, blocked_toggles=0):
+    def __init__(self, url, *, version="7", editable=True, dirty_polls=0, blocked_toggles=0,
+                 signed_in=True):
         super().__init__(url)
         self.version = version
         self.editable = editable
+        self.signed_in = signed_in
         self.dirty_polls = dirty_polls
         self.blocked_toggles = blocked_toggles
         self.gotos = []
@@ -109,13 +112,15 @@ class EditorTab(Page):
         self.url = url
         self.version = "7"
 
-    async def evaluate(self, script, arguments):
+    async def evaluate(self, script, arguments=None):
         if script is MODEL_STATE_SCRIPT:
             dirty = self.dirty_polls > 0
             self.dirty_polls = max(0, self.dirty_polls - 1)
             return {"url": self.url, "version": self.version, "dirty": dirty}
         if script is REPORT_READY_SCRIPT:
             return {"url": self.url, "report_id": arguments}
+        if script is SIGNED_IN_SCRIPT:
+            return self.signed_in
         if "getReport" in script and "editable" in script:
             return self.editable
         return await super().evaluate(script, arguments)
@@ -469,6 +474,35 @@ def test_acquire_keeps_plain_viewer_for_view_only_account(tmp_path):
     tab = EditorTab(BASE, version="NaN", editable=False)
     page = asyncio.run(session_for(tmp_path, tab).acquire())
     assert page is tab and tab.gotos == [] and tab.toggled == 0
+
+
+def test_acquire_refuses_a_report_that_opened_signed_out(tmp_path):
+    # A report shared with anyone loads without a Google session instead of redirecting
+    # to sign-in; it must not pass for a view-only account.
+    tab = EditorTab(BASE, version="1724162758297", editable=False, signed_in=False)
+    with pytest.raises(StudioError) as error:
+        asyncio.run(session_for(tmp_path, tab).acquire())
+    assert error.value.code == "AUTH_REQUIRED" and tab.calls == []
+
+
+def test_open_tab_for_sign_in_returns_to_the_report_with_its_account(tmp_path):
+    from urllib.parse import parse_qs, urlparse
+
+    navigated = []
+
+    async def goto(url, **kwargs):
+        navigated.append(url)
+
+    async def new_page():
+        return SimpleNamespace(goto=goto)
+
+    browser = browser_for(tmp_path)
+    browser._browser.contexts[0].new_page = new_page
+    asyncio.run(browser.open_tab(f"https://lookerstudio.google.com/reporting/{REPORT}?authuser=1", sign_in=True))
+    parsed = urlparse(navigated[0])
+    assert parsed.netloc == "accounts.google.com"
+    assert parse_qs(parsed.query)["continue"] == [
+        f"https://lookerstudio.google.com/reporting/{REPORT}?authuser=1"]
 
 
 def test_acquire_reloads_editor_when_overlay_blocks_the_view_toggle(tmp_path):

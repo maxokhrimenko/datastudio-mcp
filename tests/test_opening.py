@@ -83,9 +83,11 @@ def harness(tmp_path, *pages, new_page=None, errors=(), inventory_error=None, he
     browser = Browser(BrowserConfig(tmp_path, tmp_path / "journal", launch_timeout_s=0.01))
     browser._browser = FakeBrowser(list(pages))
     opened = []
+    browser.sign_in_tabs = 0
 
-    async def open_tab(report_id):
+    async def open_tab(report_id, *, sign_in=False):
         opened.append(report_id)
+        browser.sign_in_tabs += sign_in
         page = new_page or Page([BASE])
         browser._browser.contexts[0].pages.append(page)
         return page
@@ -262,6 +264,8 @@ def test_sign_in_seen_only_by_acquire_waits_for_the_user(tmp_path):
     result = run(open_report(ws, REPORT, wait_seconds=50, clock=lambda: next(ticks), sleep=noop))
     assert result["status"] == "ready"
     assert ws.browser.relaunches == [False, True]  # Window for sign-in, then background.
+    # The window opens Google sign-in itself: a report shared with anyone loads signed out.
+    assert ws.browser.sign_in_tabs == 1
 
 
 def test_sign_in_not_completed_by_deadline_is_reported_not_raised(tmp_path):
